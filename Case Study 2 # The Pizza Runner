@@ -1,0 +1,65 @@
+
+--A. Pizza Metrics
+
+
+--1 Q. How many pizzas were ordered?
+SELECT COUNT(DISTINCT(order_id)) AS no_of_pizzas_ordered
+FROM #customer_orders;
+
+--2 Q. How many unique customer orders were made?
+SELECT customer_id, COUNT(order_id) AS unique_orders
+FROM #customer_orders
+GROUP BY customer_id
+
+-- 3 Q. How many successful orders were delivered by each runner?
+ select runner_id ,count(distance) as successful_order from pizza_runner.runner_orders  where distance not like 'null' group by runner_id;
+
+-- 4 Q.How many of each type of pizza was delivered?
+select pizza_id,count(c.pizza_id) as pizza_dilivered 
+from 
+pizza_runner.customer_orders c   
+join pizza_runner.runner_orders rc
+on c.order_id = rc.runner_id
+where rc.distance not like 'null' group by c.pizza_id; 
+
+--5 Q.How many Vegetarian and Meatlovers were ordered by each customer?
+SELECT c.customer_id, p.pizza_name, COUNT(p.pizza_name) AS no_of_orders
+FROM pizza_runner.customer_orders AS c
+JOIN pizza_runner.pizza_names AS p
+	ON c.pizza_id= p.pizza_id
+GROUP BY c.customer_id, p.pizza_name
+ORDER BY c.customer_id;
+
+--6 Q.What was the maximum number of pizzas delivered in a single order?
+select count(order_id) as max_no_of_pizzas_in_single_order from pizza_runner.customer_orders group by order_id order by count(order_id) desc limit 1;
+
+-- 7 Q. For each customer, how many delivered pizzas had at least 1 change and how many had no changes?
+SELECT c.customer_id,
+	SUM(CASE 
+		WHEN c.exclusions <> ' ' OR c.extras <> ' ' THEN 1
+		ELSE 0
+		END) AS with_changes,
+	SUM(CASE 
+		WHEN c.exclusions IS NULL OR c.extras IS NULL THEN 1 
+		ELSE 0
+		END) AS no_changes
+FROM pizza_runner.customer_orders AS c
+JOIN pizza_runner.runner_orders AS r
+	ON c.order_id = r.order_id
+WHERE r.distance not like 'null'
+GROUP BY c.customer_id
+ORDER BY c.customer_id;
+
+-- 8 Q.How many pizzas were delivered that had both exclusions and extras?
+ select count(c.order_id) as pizza from pizza_runner.customer_orders c join pizza_runner.runner_orders r on c.order_id = r.order_id where distance not like 'null' and  exclusions not like '' and exclusions not like 'null' and extras not like ''  and extras not like 'null';
+
+-- 9 Q.What was the total volume of pizzas ordered for each hour of the day?
+SELECT EXTRACT(HOUR from order_time) AS hour_of_the_day, COUNT(order_id) AS total_pizzas_ordered
+FROM pizza_runner.customer_orders
+GROUP BY Extract(HOUR from order_time) order by hour_of_the_day;
+
+-- 10 Q.What was the volume of orders for each day of the week?
+SELECT EXTRACT(day from order_time) AS day_of_the_week, COUNT(order_id) AS total_pizzas_ordered
+FROM pizza_runner.customer_orders
+GROUP BY Extract(day from order_time) order by day_of_the_week
+
